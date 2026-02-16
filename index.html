@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snakes and Ladders - Fun Kids Game!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="game-container">
+        <div class="header">
+            <h1>🐍 Snakes & Ladders 🪜</h1>
+            <div class="game-info">
+                <div class="current-player">
+                    <span>Current Player: </span>
+                    <span id="current-player-name">Player 1</span>
+                </div>
+                <div class="dice-area">
+                    <div id="dice" class="dice-display">
+                        <div class="dice-face" id="dice-face">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot visible"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
+                    <div id="dice-value" class="dice-value">Roll the dice!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="board-container">
+                <div id="game-board" class="game-board"></div>
+                <div id="players-container" class="players-container"></div>
+            </div>
+
+            <div class="sidebar">
+                <div class="players-panel">
+                    <h2>🎮 Players</h2>
+                    <div id="players-list" class="players-list"></div>
+                    <button id="add-player" class="btn btn-secondary">➕ Add Player</button>
+                </div>
+
+                <div class="controls">
+                    <button id="roll-dice" class="btn btn-primary">🎲 Roll Dice</button>
+                    <button id="reset-game" class="btn btn-danger">🔄 Reset Game</button>
+                </div>
+
+                <div class="game-log">
+                    <h3>📜 Game Log</h3>
+                    <div id="log" class="log-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="event-animation" class="event-animation"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
