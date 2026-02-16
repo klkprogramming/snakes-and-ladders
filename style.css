@@ -2,12 +2,18 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    overflow-x: hidden;
 }
 
 body {
     font-family: 'Fredoka', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #d7ffd9 100%);
     min-height: 100vh;
+    min-height: 100dvh;
     padding: 20px;
     color: #333;
     overflow-x: hidden;
@@ -117,10 +123,6 @@ body {
     position: relative;
 }
 
-.dice-display:hover .dice-face {
-    transform: scale(1.05);
-}
-
 .dice-display.rolling .dice-face {
     animation: diceRoll 0.12s linear infinite;
 }
@@ -226,10 +228,12 @@ body {
     overflow: hidden;
 }
 
-.cell:hover {
-    transform: scale(1.08);
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-    z-index: 4;
+@media (hover: hover) {
+    .cell:hover {
+        transform: scale(1.08);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+        z-index: 4;
+    }
 }
 
 .cell.snake-start {
@@ -337,11 +341,6 @@ body {
     cursor: pointer;
 }
 
-.player-token:hover {
-    transform: translate(-50%, -50%) scale(1.3);
-    z-index: 20;
-}
-
 .player-token.moving {
     animation: tokenBounce 0.3s ease-in-out;
 }
@@ -376,7 +375,7 @@ body {
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-/* ========== SIDEBAR ========== */
+/* ========== SIDEBAR (Desktop) ========== */
 .sidebar {
     width: 300px;
     display: flex;
@@ -466,6 +465,7 @@ body {
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .btn::after {
@@ -479,17 +479,24 @@ body {
     transition: left 0.5s ease;
 }
 
-.btn:hover::after {
-    left: 100%;
-}
+@media (hover: hover) {
+    .btn:hover::after {
+        left: 100%;
+    }
 
-.btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
 }
 
 .btn:active {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(0.98);
+}
+
+.btn-sm {
+    padding: 10px 18px;
+    font-size: 0.9em;
 }
 
 .btn-primary {
@@ -607,6 +614,7 @@ body {
     justify-content: center;
     z-index: 2000;
     backdrop-filter: blur(4px);
+    padding: 20px;
 }
 
 .winner-celebration.show {
@@ -615,13 +623,14 @@ body {
 
 .winner-content {
     background: linear-gradient(135deg, #fff9f0, #ffffff);
-    padding: 50px 60px;
+    padding: 40px 50px;
     border-radius: 24px;
     text-align: center;
     animation: winnerPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 4px rgba(255,200,100,0.5);
     position: relative;
     overflow: hidden;
+    max-width: 90vw;
 }
 
 .winner-content::before {
@@ -652,7 +661,7 @@ body {
 }
 
 .winner-content h2 {
-    font-size: 2.8em;
+    font-size: 2.5em;
     background: linear-gradient(135deg, #f5576c, #ff6b6b, #ffd93d);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -662,13 +671,13 @@ body {
 }
 
 .winner-content p {
-    font-size: 1.6em;
+    font-size: 1.4em;
     margin-bottom: 25px;
     font-weight: 600;
 }
 
 .winner-emoji {
-    font-size: 3em;
+    font-size: 2.5em;
     display: block;
     margin-bottom: 10px;
     animation: winnerEmojiBounce 1s ease-in-out infinite;
@@ -679,7 +688,7 @@ body {
     50% { transform: translateY(-10px) scale(1.1); }
 }
 
-/* ========== SVG SNAKE/LADDER ANIMATIONS ========== */
+/* ========== SVG ANIMATIONS ========== */
 .snake-body-main {
     animation: snakeSlither 3s ease-in-out infinite;
 }
@@ -717,23 +726,254 @@ body {
     50% { opacity: 0.3; }
 }
 
-/* ========== BOARD INTRO ANIMATION ========== */
+/* ========== BOARD INTRO ========== */
 .cell.animate-in {
     animation: cellFadeIn 0.4s ease-out backwards;
 }
 
 @keyframes cellFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.5) rotate(10deg);
+    from { opacity: 0; transform: scale(0.5) rotate(10deg); }
+    to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* ========== MOBILE BOTTOM BAR ========== */
+.mobile-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    background: linear-gradient(135deg, #fff9f0 0%, #ffffff 100%);
+    border-top: 3px solid #d4a76a;
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-roll-btn {
+    flex: 1;
+    max-width: 220px;
+    padding: 14px 24px;
+    font-size: 1.3em;
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    letter-spacing: 1px;
+}
+
+.mobile-roll-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.mobile-roll-btn:disabled {
+    background: #c4b5a0;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.mobile-roll-btn .roll-icon {
+    font-size: 1.1em;
+}
+
+.mobile-menu-btn,
+.mobile-reset-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    border: 2px solid rgba(210, 167, 106, 0.3);
+    background: white;
+    font-size: 1.4em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    flex-shrink: 0;
+}
+
+.mobile-menu-btn:active,
+.mobile-reset-btn:active {
+    transform: scale(0.9);
+    background: #f5f0e8;
+}
+
+/* ========== DRAWER ========== */
+.drawer-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 950;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+.drawer-overlay.open {
+    display: block;
+    opacity: 1;
+}
+
+.drawer-panel {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    max-width: 85vw;
+    height: 100%;
+    height: 100dvh;
+    background: linear-gradient(180deg, #fff9f0 0%, #ffffff 100%);
+    z-index: 960;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.drawer-panel.open {
+    right: 0;
+}
+
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 2px solid rgba(210, 167, 106, 0.2);
+    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+    color: #5a3e2b;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.drawer-header h3 {
+    font-weight: 600;
+    font-size: 1.15em;
+}
+
+.drawer-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.5);
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    color: #5a3e2b;
+    font-weight: 700;
+}
+
+.drawer-close-btn:active {
+    transform: scale(0.9);
+    background: rgba(255,255,255,0.8);
+}
+
+.drawer-body {
+    padding: 16px;
+    padding-bottom: 100px;
+}
+
+.drawer-section {
+    margin-bottom: 20px;
+}
+
+.drawer-section h4 {
+    color: #5a3e2b;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.drawer-players {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.drawer-player-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    border-left: 4px solid;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    gap: 8px;
+}
+
+.drawer-player-item.active {
+    background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.drawer-player-emoji {
+    font-size: 1.3em;
+}
+
+.drawer-player-info {
+    flex: 1;
+}
+
+.drawer-player-name {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: #5a3e2b;
+}
+
+.drawer-player-pos {
+    font-size: 0.8em;
+    color: #9a8070;
+}
+
+.drawer-log {
+    max-height: 250px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.drawer-log .log-entry {
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    font-size: 0.85em;
+}
+
+/* ========== DESKTOP: hide mobile elements ========== */
+@media (min-width: 769px) {
+    .mobile-bar {
+        display: none !important;
     }
-    to {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
+
+    .drawer-overlay,
+    .drawer-panel {
+        display: none !important;
     }
 }
 
-/* ========== RESPONSIVE ========== */
+/* ========== TABLET ========== */
 @media (max-width: 1024px) {
     .main-content {
         flex-direction: column;
@@ -752,23 +992,54 @@ body {
     }
 }
 
-@media (max-width: 600px) {
+/* ========== MOBILE ========== */
+@media (max-width: 768px) {
     body {
-        padding: 10px;
+        padding: 0;
+        background: #fff9f0;
+        padding-bottom: 80px;
     }
 
+    .game-container {
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+        background: #fff9f0;
+    }
+
+    /* Compact header */
     .header {
-        padding: 15px;
+        padding: 10px 14px;
     }
 
     .header h1 {
-        font-size: 1.4em;
+        font-size: 1.35em;
+        margin-bottom: 6px;
+    }
+
+    .game-info {
+        gap: 10px;
+    }
+
+    .current-player {
+        font-size: 1.05em;
+    }
+
+    .label-text {
+        display: none;
+    }
+
+    /* Smaller dice in header */
+    .dice-area {
+        flex-direction: row;
+        gap: 8px;
     }
 
     .dice-face {
-        width: 60px;
-        height: 60px;
-        padding: 8px;
+        width: 52px;
+        height: 52px;
+        padding: 6px;
+        border-radius: 10px;
     }
 
     .dot {
@@ -776,9 +1047,176 @@ body {
         height: 10px;
     }
 
-    .player-token {
-        width: 28px;
-        height: 28px;
+    .dice-value {
         font-size: 0.9em;
+        padding: 4px 10px;
+    }
+
+    /* Board fills screen width */
+    .main-content {
+        padding: 6px;
+        gap: 0;
+    }
+
+    .board-container {
+        padding: 4px;
+        border-radius: 10px;
+        min-height: auto;
+        box-shadow:
+            inset 0 1px 6px rgba(139, 90, 43, 0.1),
+            0 0 0 2px #d4a76a;
+    }
+
+    .game-board {
+        gap: 1px;
+        min-height: auto;
+    }
+
+    .cell {
+        border-width: 1px;
+        border-radius: 3px;
+    }
+
+    .cell-number {
+        font-size: 0.5em;
+        top: 0;
+        left: 1px;
+    }
+
+    .cell-icon {
+        font-size: 0.55em;
+    }
+
+    .cell.start::after {
+        font-size: 0.5em;
+    }
+
+    .cell.end::after {
+        font-size: 0.8em;
+    }
+
+    /* Player tokens */
+    .player-token {
+        width: 26px;
+        height: 26px;
+        font-size: 0.8em;
+        border-width: 2px;
+    }
+
+    /* Hide sidebar on mobile */
+    .sidebar {
+        display: none;
+    }
+
+    /* Show mobile bar */
+    .mobile-bar {
+        display: flex;
+    }
+
+    /* Event animation smaller on mobile */
+    .event-animation {
+        font-size: 3.5em;
+    }
+
+    /* Winner content responsive */
+    .winner-content {
+        padding: 30px 25px;
+    }
+
+    .winner-content h2 {
+        font-size: 1.8em;
+    }
+
+    .winner-content p {
+        font-size: 1.2em;
+    }
+
+    .winner-emoji {
+        font-size: 2em;
+    }
+}
+
+/* ========== SMALL PHONES ========== */
+@media (max-width: 380px) {
+    .header h1 {
+        font-size: 1.1em;
+    }
+
+    .dice-face {
+        width: 44px;
+        height: 44px;
+        padding: 5px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .current-player {
+        font-size: 0.95em;
+    }
+
+    .mobile-roll-btn {
+        font-size: 1.1em;
+        padding: 12px 18px;
+    }
+
+    .player-token {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7em;
+        border-width: 1.5px;
+    }
+}
+
+/* ========== LANDSCAPE PHONE ========== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header {
+        padding: 6px 14px;
+    }
+
+    .header h1 {
+        font-size: 1.1em;
+        margin-bottom: 4px;
+    }
+
+    .game-info {
+        gap: 8px;
+    }
+
+    .dice-face {
+        width: 40px;
+        height: 40px;
+        padding: 4px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .main-content {
+        padding: 4px;
+    }
+
+    .board-container {
+        padding: 3px;
+        max-height: calc(100dvh - 100px);
+    }
+
+    .game-board {
+        max-height: calc(100dvh - 110px);
+    }
+
+    .cell {
+        aspect-ratio: 1;
+    }
+}
+
+/* ========== PREVENT iOS BOUNCE ========== */
+@supports (-webkit-touch-callout: none) {
+    body {
+        -webkit-overflow-scrolling: touch;
     }
 }

@@ -165,6 +165,8 @@ let gameState = {
     gameWon: false
 };
 
+let drawerOpen = false;
+
 // ============================================================
 // INITIALIZATION
 // ============================================================
@@ -177,8 +179,83 @@ function initGame() {
     document.getElementById('reset-game').addEventListener('click', resetGame);
     document.getElementById('add-player').addEventListener('click', addPlayer);
 
+    // Mobile bar buttons
+    const mobileRollBtn = document.getElementById('mobile-roll-btn');
+    if (mobileRollBtn) mobileRollBtn.addEventListener('click', rollDice);
+
+    const mobileResetBtn = document.getElementById('mobile-reset-btn');
+    if (mobileResetBtn) mobileResetBtn.addEventListener('click', resetGame);
+
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openDrawer);
+
+    // Drawer buttons
+    const drawerCloseBtn = document.getElementById('drawer-close-btn');
+    if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeDrawer);
+
+    const drawerOverlay = document.getElementById('drawer-overlay');
+    if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+
+    const drawerAddPlayer = document.getElementById('drawer-add-player');
+    if (drawerAddPlayer) drawerAddPlayer.addEventListener('click', () => { addPlayer(); updateDrawerPlayers(); });
+
+    const drawerReset = document.getElementById('drawer-reset');
+    if (drawerReset) drawerReset.addEventListener('click', () => { closeDrawer(); resetGame(); });
+
+    // Tapping the dice also rolls
+    document.getElementById('dice').addEventListener('click', rollDice);
+
     addPlayer();
     addPlayer();
+}
+
+// ============================================================
+// MOBILE DRAWER
+// ============================================================
+function openDrawer() {
+    drawerOpen = true;
+    updateDrawerPlayers();
+    updateDrawerLog();
+    document.getElementById('drawer-panel').classList.add('open');
+    document.getElementById('drawer-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    drawerOpen = false;
+    document.getElementById('drawer-panel').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function updateDrawerPlayers() {
+    const container = document.getElementById('drawer-players');
+    if (!container) return;
+    container.innerHTML = '';
+
+    gameState.players.forEach((player, index) => {
+        const item = document.createElement('div');
+        item.className = 'drawer-player-item';
+        if (index === gameState.currentPlayerIndex && gameState.gameStarted) {
+            item.classList.add('active');
+        }
+        item.style.borderLeftColor = player.color;
+        item.innerHTML = `
+            <span class="drawer-player-emoji">${player.emoji}</span>
+            <div class="drawer-player-info">
+                <div class="drawer-player-name">${player.name}</div>
+                <div class="drawer-player-pos">Position: ${player.position === 0 ? 'Start' : player.position}</div>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function updateDrawerLog() {
+    const drawerLog = document.getElementById('drawer-log');
+    const mainLog = document.getElementById('log');
+    if (!drawerLog || !mainLog) return;
+    drawerLog.innerHTML = mainLog.innerHTML;
 }
 
 // ============================================================
@@ -723,6 +800,7 @@ function addPlayer() {
     gameState.players.push(player);
     updatePlayersList();
     updatePlayerTokens();
+    updateDrawerPlayers();
     addLog(`${player.emoji} ${player.name} joined the game!`, player.color);
 }
 
@@ -786,15 +864,21 @@ function renderDiceFace(value) {
     });
 }
 
+function setRollButtonsDisabled(disabled) {
+    const desktopBtn = document.getElementById('roll-dice');
+    const mobileBtn = document.getElementById('mobile-roll-btn');
+    if (desktopBtn) desktopBtn.disabled = disabled;
+    if (mobileBtn) mobileBtn.disabled = disabled;
+}
+
 function rollDice() {
     if (gameState.gameWon || gameState.players.length < 2) return;
     if (!gameState.gameStarted) gameState.gameStarted = true;
 
     const diceDisplay = document.getElementById('dice');
     const diceValueEl = document.getElementById('dice-value');
-    const rollButton = document.getElementById('roll-dice');
 
-    rollButton.disabled = true;
+    setRollButtonsDisabled(true);
     diceDisplay.classList.add('rolling');
     diceDisplay.classList.remove('landed');
 
@@ -890,7 +974,7 @@ function nextTurn() {
     setTimeout(() => {
         gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
         updateUI();
-        document.getElementById('roll-dice').disabled = false;
+        setRollButtonsDisabled(false);
     }, 200);
 }
 
@@ -991,8 +1075,9 @@ function createConfetti() {
 
     const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6b9d', '#c44dff', '#ff9f43', '#00d2d3', '#feca57', '#ff6348'];
     const particles = [];
+    const count = window.innerWidth < 500 ? 100 : 200;
 
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < count; i++) {
         particles.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height * -1 - 50,
@@ -1058,6 +1143,7 @@ function createConfetti() {
 function updateUI() {
     updatePlayersList();
     updatePlayerTokens();
+    updateDrawerPlayers();
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer) {
@@ -1077,6 +1163,10 @@ function addLog(message, color = '#5a3e2b') {
     while (log.children.length > 25) {
         log.removeChild(log.lastChild);
     }
+
+    if (drawerOpen) {
+        updateDrawerLog();
+    }
 }
 
 // ============================================================
@@ -1092,7 +1182,7 @@ function resetGame() {
 
     renderDiceFace(1);
     document.getElementById('dice-value').textContent = 'Roll the dice!';
-    document.getElementById('roll-dice').disabled = false;
+    setRollButtonsDisabled(false);
     document.getElementById('log').innerHTML = '';
 
     const celebration = document.querySelector('.winner-celebration');
@@ -1113,6 +1203,12 @@ function resetGame() {
 document.addEventListener('DOMContentLoaded', initGame);
 
 document.addEventListener('click', () => {
+    if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}, { once: true });
+
+document.addEventListener('touchstart', () => {
     if (audioContext && audioContext.state === 'suspended') {
         audioContext.resume();
     }
