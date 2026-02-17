@@ -45,9 +45,9 @@ const LADDER_THEMES = [
 ];
 
 const CELL_COLORS = [
-    '#fef3c7', '#dbeafe', '#dcfce7', '#fce7f3',
-    '#e0e7ff', '#fef9c3', '#d1fae5', '#ffe4e6',
-    '#f3e8ff', '#ecfccb', '#cffafe', '#fce7f3'
+    '#ede9fe', '#dbeafe', '#d1fae5', '#fce7f3',
+    '#e0e7ff', '#cffafe', '#f3e8ff', '#fce4ec',
+    '#e8eaf6', '#dcedc8', '#e1f5fe', '#f3e5f5'
 ];
 
 const DICE_PATTERNS = {
@@ -306,7 +306,7 @@ function createBoard() {
                 cell.title = `Ladder! Climbs to ${LADDERS[cellNumber]}`;
                 const icon = document.createElement('span');
                 icon.className = 'cell-icon';
-                icon.textContent = '🪜';
+                icon.textContent = '⬆️';
                 cell.appendChild(icon);
             } else if (Object.values(LADDERS).includes(cellNumber)) {
                 cell.classList.add('ladder-end');
@@ -944,7 +944,7 @@ async function movePlayer(steps) {
         if (token) setTimeout(() => token.classList.remove('snake-slide'), 600);
     } else if (LADDERS[newPosition]) {
         finalPosition = LADDERS[newPosition];
-        showEventAnimation('🪜', '#51cf66');
+        showEventAnimation('🌟', '#51cf66');
         if (sounds.ladder) sounds.ladder();
         addLog(`🎉 ${currentPlayer.name} found a LADDER! Climbing to ${finalPosition}!`, '#22c55e');
 
@@ -1152,7 +1152,7 @@ function updateUI() {
     }
 }
 
-function addLog(message, color = '#5a3e2b') {
+function addLog(message, color = '#4c1d95') {
     const log = document.getElementById('log');
     const entry = document.createElement('div');
     entry.className = 'log-entry';
@@ -1194,7 +1194,7 @@ function resetGame() {
 
     createBoard();
     updateUI();
-    addLog('🔄 Game reset! Ready to play!', '#5a3e2b');
+    addLog('🔄 Game reset! Ready to play!', '#4c1d95');
 }
 
 // ============================================================
