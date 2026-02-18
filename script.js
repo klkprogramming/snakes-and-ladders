@@ -986,8 +986,15 @@ async function movePlayer(steps) {
         }
     }
 
-    let currentPos = Math.min(currentPlayer.position + steps, TOTAL_CELLS);
-    addLog(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${steps} → position ${currentPos}`, currentPlayer.color);
+    let currentPos = currentPlayer.position + steps;
+
+    if (currentPos > TOTAL_CELLS) {
+        const overshoot = currentPos - TOTAL_CELLS;
+        currentPos = TOTAL_CELLS - overshoot;
+        addLog(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${steps} — bounced back to ${currentPos}!`, '#f97316');
+    } else {
+        addLog(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${steps} → position ${currentPos}`, currentPlayer.color);
+    }
 
     await animatePlayerMovement(currentPlayer, currentPos);
 
@@ -999,7 +1006,10 @@ async function movePlayer(steps) {
         if (sounds.powerup) sounds.powerup();
 
         if (powerup.id === 'boost') {
-            const boostedPos = Math.min(currentPos + 5, TOTAL_CELLS);
+            let boostedPos = currentPos + 5;
+            if (boostedPos > TOTAL_CELLS) {
+                boostedPos = TOTAL_CELLS - (boostedPos - TOTAL_CELLS);
+            }
             addLog(`🚀 ${currentPlayer.name} rockets forward to ${boostedPos}!`, '#8b5cf6');
             await delay(400);
             await animatePlayerMovement(currentPlayer, boostedPos);
