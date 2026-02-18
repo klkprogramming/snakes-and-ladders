@@ -59,6 +59,15 @@ const DICE_PATTERNS = {
     6: [true, false, true, true, false, true, true, false, true],
 };
 
+const POWERUP_CELLS = [10, 30, 45, 57, 73, 90];
+
+const POWERUP_TYPES = [
+    { id: 'double', name: 'Double Roll', emoji: '⚡', description: 'Next roll is doubled!', instant: false },
+    { id: 'shield', name: 'Snake Shield', emoji: '🛡️', description: 'Blocks the next snake!', instant: false },
+    { id: 'boost', name: 'Rocket Boost', emoji: '🚀', description: 'Jump 5 extra spaces!', instant: true },
+    { id: 'extra', name: 'Extra Turn', emoji: '🎯', description: 'Roll again!', instant: true },
+];
+
 // ============================================================
 // AUDIO SYSTEM
 // ============================================================
@@ -135,6 +144,38 @@ function createSounds() {
             osc.start(t);
             osc.stop(t + 0.12);
         });
+    };
+
+    sounds.powerup = () => {
+        const notes = [600, 800, 1000, 1200];
+        notes.forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            const t = audioContext.currentTime + i * 0.06;
+            gain.gain.setValueAtTime(0.2, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            osc.start(t);
+            osc.stop(t + 0.15);
+        });
+    };
+
+    sounds.shield = () => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.frequency.setValueAtTime(300, audioContext.currentTime);
+        osc.frequency.linearRampToValueAtTime(600, audioContext.currentTime + 0.15);
+        osc.frequency.linearRampToValueAtTime(300, audioContext.currentTime + 0.3);
+        osc.type = 'triangle';
+        gain.gain.setValueAtTime(0.25, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+        osc.start(audioContext.currentTime);
+        osc.stop(audioContext.currentTime + 0.4);
     };
 
     sounds.win = () => {
@@ -240,11 +281,12 @@ function updateDrawerPlayers() {
             item.classList.add('active');
         }
         item.style.borderLeftColor = player.color;
+        const badgeHtml = player.powerup ? `<span class="powerup-badge">${player.powerup.emoji}</span>` : '';
         item.innerHTML = `
             <span class="drawer-player-emoji">${player.emoji}</span>
             <div class="drawer-player-info">
-                <div class="drawer-player-name">${player.name}</div>
-                <div class="drawer-player-pos">Position: ${player.position === 0 ? 'Start' : player.position}</div>
+                <div class="drawer-player-name">${player.name} ${badgeHtml}</div>
+                <div class="drawer-player-pos">Position: ${player.position === 0 ? 'Start' : player.position}${player.powerup ? ` · ${player.powerup.name}` : ''}</div>
             </div>
         `;
         container.appendChild(item);
@@ -310,6 +352,13 @@ function createBoard() {
                 cell.appendChild(icon);
             } else if (Object.values(LADDERS).includes(cellNumber)) {
                 cell.classList.add('ladder-end');
+            } else if (POWERUP_CELLS.includes(cellNumber)) {
+                cell.classList.add('powerup-cell');
+                cell.title = 'Power-up! Land here for a special power!';
+                const icon = document.createElement('span');
+                icon.className = 'cell-icon powerup-icon';
+                icon.textContent = '⭐';
+                cell.appendChild(icon);
             }
 
             const delay = ((BOARD_SIZE - 1 - row) * BOARD_SIZE + Math.abs(col - (isReverse ? BOARD_SIZE - 1 : 0))) * 15;
@@ -794,7 +843,8 @@ function addPlayer() {
         name: `Player ${playerNumber}`,
         position: 0,
         color: PLAYER_COLORS[playerNumber - 1],
-        emoji: PLAYER_EMOJIS[playerNumber - 1]
+        emoji: PLAYER_EMOJIS[playerNumber - 1],
+        powerup: null
     };
 
     gameState.players.push(player);
@@ -816,11 +866,12 @@ function updatePlayersList() {
         }
         playerItem.style.borderLeftColor = player.color;
 
+        const badgeHtml = player.powerup ? `<span class="powerup-badge">${player.powerup.emoji}</span>` : '';
         playerItem.innerHTML = `
             <span class="player-emoji">${player.emoji}</span>
             <div class="player-info">
-                <div class="player-name">${player.name}</div>
-                <div class="player-position">Position: ${player.position === 0 ? 'Start' : player.position}</div>
+                <div class="player-name">${player.name} ${badgeHtml}</div>
+                <div class="player-position">Position: ${player.position === 0 ? 'Start' : player.position}${player.powerup ? ` · ${player.powerup.name}` : ''}</div>
             </div>
         `;
 
@@ -897,10 +948,23 @@ function rollDice() {
         renderDiceFace(value);
         diceDisplay.classList.remove('rolling');
         diceDisplay.classList.add('landed');
-        diceValueEl.textContent = `Rolled: ${value}`;
+
+        const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+        let finalValue = value;
+
+        if (currentPlayer.powerup && currentPlayer.powerup.id === 'double') {
+            finalValue = value * 2;
+            currentPlayer.powerup = null;
+            diceValueEl.textContent = `⚡ ${value} × 2 = ${finalValue}!`;
+            addLog(`⚡ ${currentPlayer.name}'s roll was DOUBLED! ${value} → ${finalValue}!`, '#eab308');
+            updatePlayersList();
+            updateDrawerPlayers();
+        } else {
+            diceValueEl.textContent = `Rolled: ${value}`;
+        }
 
         setTimeout(() => diceDisplay.classList.remove('landed'), 400);
-        movePlayer(value);
+        movePlayer(finalValue);
     }, 700);
 }
 
@@ -922,48 +986,84 @@ async function movePlayer(steps) {
         }
     }
 
-    const newPosition = Math.min(currentPlayer.position + steps, TOTAL_CELLS);
-    addLog(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${steps} → position ${newPosition}`, currentPlayer.color);
+    let currentPos = Math.min(currentPlayer.position + steps, TOTAL_CELLS);
+    addLog(`${currentPlayer.emoji} ${currentPlayer.name} rolled ${steps} → position ${currentPos}`, currentPlayer.color);
 
-    await animatePlayerMovement(currentPlayer, newPosition);
+    await animatePlayerMovement(currentPlayer, currentPos);
 
-    let finalPosition = newPosition;
+    let grantExtraTurn = false;
 
-    if (SNAKES[newPosition]) {
-        finalPosition = SNAKES[newPosition];
-        showEventAnimation('🐍', '#ff6b6b');
-        screenShake();
-        if (sounds.snake) sounds.snake();
-        addLog(`😱 ${currentPlayer.name} hit a SNAKE! Sliding to ${finalPosition}!`, '#ef4444');
+    if (POWERUP_CELLS.includes(currentPos)) {
+        const powerup = collectPowerup(currentPlayer);
+        showPowerupNotification(powerup);
+        if (sounds.powerup) sounds.powerup();
 
-        await delay(400);
+        if (powerup.id === 'boost') {
+            const boostedPos = Math.min(currentPos + 5, TOTAL_CELLS);
+            addLog(`🚀 ${currentPlayer.name} rockets forward to ${boostedPos}!`, '#8b5cf6');
+            await delay(400);
+            await animatePlayerMovement(currentPlayer, boostedPos);
+            currentPos = boostedPos;
+        } else if (powerup.id === 'extra') {
+            grantExtraTurn = true;
+        }
+    }
 
-        const token = document.getElementById(`player-token-${currentPlayer.id}`);
-        if (token) token.classList.add('snake-slide');
-        await animatePlayerMovement(currentPlayer, finalPosition);
-        if (token) setTimeout(() => token.classList.remove('snake-slide'), 600);
-    } else if (LADDERS[newPosition]) {
-        finalPosition = LADDERS[newPosition];
+    if (SNAKES[currentPos]) {
+        if (currentPlayer.powerup && currentPlayer.powerup.id === 'shield') {
+            currentPlayer.powerup = null;
+            showEventAnimation('🛡️', '#6366f1');
+            if (sounds.shield) sounds.shield();
+            addLog(`🛡️ ${currentPlayer.name}'s Shield blocked the snake!`, '#6366f1');
+            updatePlayersList();
+            updateDrawerPlayers();
+            await delay(600);
+        } else {
+            const snakeDest = SNAKES[currentPos];
+            showEventAnimation('🐍', '#ff6b6b');
+            screenShake();
+            if (sounds.snake) sounds.snake();
+            addLog(`😱 ${currentPlayer.name} hit a SNAKE! Sliding to ${snakeDest}!`, '#ef4444');
+
+            await delay(400);
+
+            const token = document.getElementById(`player-token-${currentPlayer.id}`);
+            if (token) token.classList.add('snake-slide');
+            await animatePlayerMovement(currentPlayer, snakeDest);
+            if (token) setTimeout(() => token.classList.remove('snake-slide'), 600);
+            currentPos = snakeDest;
+        }
+    } else if (LADDERS[currentPos]) {
+        const ladderDest = LADDERS[currentPos];
         showEventAnimation('🌟', '#51cf66');
         if (sounds.ladder) sounds.ladder();
-        addLog(`🎉 ${currentPlayer.name} found a LADDER! Climbing to ${finalPosition}!`, '#22c55e');
+        addLog(`🎉 ${currentPlayer.name} found a LADDER! Climbing to ${ladderDest}!`, '#22c55e');
 
         await delay(400);
 
         const token = document.getElementById(`player-token-${currentPlayer.id}`);
         if (token) token.classList.add('ladder-climb');
-        await animatePlayerMovement(currentPlayer, finalPosition);
+        await animatePlayerMovement(currentPlayer, ladderDest);
         if (token) setTimeout(() => token.classList.remove('ladder-climb'), 600);
+        currentPos = ladderDest;
     }
 
-    currentPlayer.position = finalPosition;
+    currentPlayer.position = currentPos;
     updatePlayerTokens();
 
-    if (finalPosition === TOTAL_CELLS) {
+    if (currentPos === TOTAL_CELLS) {
         gameState.gameWon = true;
         showWinner(currentPlayer);
         if (sounds.win) sounds.win();
         addLog(`🏆 ${currentPlayer.emoji} ${currentPlayer.name} WINS! 🏆`, currentPlayer.color);
+        return;
+    }
+
+    if (grantExtraTurn) {
+        addLog(`🎯 ${currentPlayer.name} gets an EXTRA TURN!`, '#d946ef');
+        updatePlayersList();
+        updateDrawerPlayers();
+        setTimeout(() => setRollButtonsDisabled(false), 600);
         return;
     }
 
@@ -1034,6 +1134,33 @@ function delay(ms) {
 // ============================================================
 // EFFECTS
 // ============================================================
+function collectPowerup(player) {
+    const powerup = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+
+    if (!powerup.instant) {
+        player.powerup = { ...powerup };
+        updatePlayersList();
+        updateDrawerPlayers();
+    }
+
+    addLog(`⭐ ${player.name} got ${powerup.emoji} ${powerup.name}! ${powerup.description}`, '#d946ef');
+    return powerup;
+}
+
+function showPowerupNotification(powerup) {
+    const notif = document.getElementById('powerup-notification');
+    if (!notif) return;
+    notif.innerHTML = `
+        <div class="powerup-notif-emoji">${powerup.emoji}</div>
+        <div class="powerup-notif-text">
+            <div class="powerup-notif-name">${powerup.name}</div>
+            <div class="powerup-notif-desc">${powerup.description}</div>
+        </div>
+    `;
+    notif.classList.add('show');
+    setTimeout(() => notif.classList.remove('show'), 2200);
+}
+
 function showEventAnimation(emoji, color) {
     const anim = document.getElementById('event-animation');
     anim.textContent = emoji;
@@ -1175,6 +1302,7 @@ function addLog(message, color = '#4c1d95') {
 function resetGame() {
     gameState.players.forEach(player => {
         player.position = 0;
+        player.powerup = null;
     });
     gameState.currentPlayerIndex = 0;
     gameState.gameStarted = false;
